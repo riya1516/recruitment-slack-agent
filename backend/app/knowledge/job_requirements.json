@@ -1,0 +1,47 @@
+{
+  "job_title": "ソフトウェアエンジニア",
+  "department": "エンジニアリング部",
+  "employment_type": "正社員",
+  "required_skills": [
+    "Python, Java, JavaScript等のプログラミング言語の実務経験（2年以上）",
+    "WebアプリケーションまたはAPIの開発経験",
+    "データベース（SQL/NoSQL）の設計・運用経験",
+    "Git等のバージョン管理システムの使用経験"
+  ],
+  "preferred_skills": [
+    "クラウドサービス（AWS, GCP, Azure）の利用経験",
+    "CI/CDパイプラインの構築経験",
+    "アジャイル開発の経験",
+    "チームリーダーまたはメンター経験"
+  ],
+  "desired_personality": [
+    "主体的に課題を発見し、解決に向けて行動できる",
+    "チームでのコミュニケーションを大切にする",
+    "新しい技術やツールの学習に積極的",
+    "ユーザー視点を持って開発できる"
+  ],
+  "company_values": [
+    "顧客志向：常にユーザーの課題解決を最優先に考える",
+    "チームワーク：互いに助け合い、知識を共有する文化",
+    "イノベーション：既存の枠にとらわれず、新しい挑戦を歓迎する",
+    "誠実さ：透明性のあるコミュニケーションと責任ある行動"
+  ],
+  "evaluation_criteria": {
+    "technical_skills": {
+      "weight": 0.3,
+      "description": "必須スキルの保有度、技術的な深さと広さ"
+    },
+    "experience_quality": {
+      "weight": 0.25,
+      "description": "過去のプロジェクト経験の質と成果"
+    },
+    "cultural_fit": {
+      "weight": 0.25,
+      "description": "企業文化・価値観との適合性"
+    },
+    "growth_potential": {
+      "weight": 0.2,
+      "description": "学習意欲と成長可能性"
+    }
+  }
+}

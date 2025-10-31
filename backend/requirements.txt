@@ -1,0 +1,23 @@
+# Slack Bot
+slack-bolt>=1.18.0
+slack-sdk>=3.26.1
+
+# AI/ML
+google-generativeai>=0.8.3
+
+# PDF Processing
+PyPDF2>=3.0.1
+pdfplumber>=0.10.3
+
+# Web API
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
+sqlalchemy>=2.0.44
+
+# Database
+psycopg2-binary>=2.9.9
+
+# Utilities
+python-dotenv>=1.0.0
+requests>=2.31.0
+pydantic>=2.5.2

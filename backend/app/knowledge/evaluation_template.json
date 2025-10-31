@@ -1,0 +1,62 @@
+{
+  "evaluation_format": {
+    "candidate_name": "",
+    "evaluation_date": "",
+    "position": "",
+    "overall_score": 0,
+    "recommendation": "",
+    "sections": {
+      "technical_skills": {
+        "score": 0,
+        "max_score": 10,
+        "summary": "",
+        "details": {
+          "required_skills_match": [],
+          "preferred_skills_match": [],
+          "skill_depth_assessment": "",
+          "technical_strengths": [],
+          "technical_concerns": []
+        }
+      },
+      "experience_quality": {
+        "score": 0,
+        "max_score": 10,
+        "summary": "",
+        "details": {
+          "relevant_projects": [],
+          "achievements": [],
+          "responsibilities": [],
+          "experience_years": "",
+          "industry_experience": []
+        }
+      },
+      "cultural_fit": {
+        "score": 0,
+        "max_score": 10,
+        "summary": "",
+        "details": {
+          "value_alignment": [],
+          "communication_style": "",
+          "teamwork_indicators": [],
+          "concerns": []
+        }
+      },
+      "growth_potential": {
+        "score": 0,
+        "max_score": 10,
+        "summary": "",
+        "details": {
+          "learning_attitude": "",
+          "skill_development_history": [],
+          "adaptability_indicators": [],
+          "career_trajectory": ""
+        }
+      }
+    },
+    "next_steps": {
+      "proceed_to_interview": false,
+      "interview_focus_areas": [],
+      "questions_to_clarify": []
+    }
+  }
+}

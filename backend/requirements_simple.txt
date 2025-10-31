@@ -1,0 +1,6 @@
+# Slack Bot (Simple Version - No AI)
+slack-bolt==1.18.0
+slack-sdk==3.26.1
+
+# Utilities
+python-dotenv==1.0.0
