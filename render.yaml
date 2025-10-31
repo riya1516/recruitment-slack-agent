@@ -25,14 +25,15 @@ services:
       - key: PYTHON_VERSION
         value: "3.11"
 
-  # Slack Bot (Background Worker)
-  - type: worker
+  # Slack Bot (Web Service with health check to prevent sleep)
+  - type: web
     name: recruitment-slack-bot
     env: python
     region: oregon
     plan: free
     buildCommand: pip install -r backend/requirements.txt
     startCommand: cd backend/app && python main.py
+    healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
         fromDatabase:

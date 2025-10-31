@@ -10,6 +10,8 @@ from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 import requests
 from datetime import datetime
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from threading import Thread
 
 from services.evaluator import DocumentEvaluator
 from database import SessionLocal
@@ -353,6 +355,35 @@ def handle_message_events(body, logger):
     logger.debug(body)
 
 
+class HealthCheckHandler(BaseHTTPRequestHandler):
+    """ヘルスチェック用のHTTPハンドラー"""
+
+    def do_GET(self):
+        if self.path == '/health':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                'status': 'healthy',
+                'service': 'recruitment-slack-bot'
+            }).encode())
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def log_message(self, format, *args):
+        """ログ出力を抑制"""
+        pass
+
+
+def start_health_check_server():
+    """ヘルスチェック用HTTPサーバーを起動"""
+    port = int(os.environ.get('PORT', 10000))
+    server = HTTPServer(('0.0.0.0', port), HealthCheckHandler)
+    print(f"[INFO] Health check server started on port {port}")
+    server.serve_forever()
+
+
 def main():
     """メイン関数"""
     # 環境変数チェック
@@ -366,6 +397,11 @@ def main():
 
     print("[OK] 採用選考支援Slackボット（AI機能あり）を起動しています...")
     print("[INFO] 書類選考支援機能が有効です")
+
+    # ヘルスチェック用HTTPサーバーを別スレッドで起動
+    health_thread = Thread(target=start_health_check_server, daemon=True)
+    health_thread.start()
+
     print("[INFO] Slackに接続中...")
 
     # Socket Modeで起動
