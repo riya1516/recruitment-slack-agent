@@ -1,12 +1,11 @@
-services:
-  # PostgreSQL Database
-  - type: pserv
-    name: recruitment-db
+databases:
+  - name: recruitment-db
+    databaseName: recruitment
+    user: recruitment_user
     plan: free
     region: oregon
-    databaseName: recruitment
-    databaseUser: recruitment_user
 
+services:
   # FastAPI Backend (Web API)
   - type: web
     name: recruitment-api
@@ -24,7 +23,7 @@ services:
       - key: GEMINI_API_KEY
         sync: false
       - key: PYTHON_VERSION
-        value: 3.11
+        value: "3.11"
 
   # Slack Bot (Background Worker)
   - type: worker
@@ -46,7 +45,7 @@ services:
       - key: GEMINI_API_KEY
         sync: false
       - key: PYTHON_VERSION
-        value: 3.11
+        value: "3.11"
 
   # React Frontend (Static Site)
   - type: web
@@ -62,4 +61,4 @@ services:
         destination: /index.html
     envVars:
       - key: NODE_VERSION
-        value: 18
+        value: "18"
