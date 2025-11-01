@@ -11,8 +11,14 @@ import {
   MenuItem,
   CircularProgress,
   Alert,
+  Tabs,
+  Tab,
+  List,
+  ListItem,
+  ListItemText,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
 
@@ -21,6 +27,9 @@ function CandidateCreate() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [jobPostings, setJobPostings] = useState([]);
+  const [tabValue, setTabValue] = useState(0);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [importResult, setImportResult] = useState(null);
   const [formData, setFormData] = useState({
     job_posting_id: '',
     name: '',
@@ -74,6 +83,58 @@ function CandidateCreate() {
     }
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setImportResult(null);
+      setError(null);
+    }
+  };
+
+  const handleFileImport = async () => {
+    if (!selectedFile) {
+      setError('CSVファイルを選択してください');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setImportResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      const response = await axios.post(`${API_BASE_URL}/candidates/import`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setImportResult(response.data);
+      setSelectedFile(null);
+
+      // 成功した場合、少し待ってから一覧ページに戻る
+      if (response.data.success && response.data.success_count > 0) {
+        setTimeout(() => {
+          navigate('/candidates');
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Failed to import candidates:', error);
+      setError(error.response?.data?.detail || 'CSVのインポートに失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+    setError(null);
+    setImportResult(null);
+  };
+
   return (
     <Container maxWidth="md">
       <Box sx={{ my: 4 }}>
@@ -96,8 +157,34 @@ function CandidateCreate() {
           </Alert>
         )}
 
+        {importResult && (
+          <Alert severity={importResult.error_count > 0 ? 'warning' : 'success'} sx={{ mb: 2 }}>
+            <Typography variant="subtitle2">
+              インポート完了: {importResult.success_count}件成功, {importResult.error_count}件失敗
+            </Typography>
+            {importResult.errors && importResult.errors.length > 0 && (
+              <Box sx={{ mt: 1 }}>
+                <Typography variant="caption">エラー詳細:</Typography>
+                <List dense>
+                  {importResult.errors.map((err, idx) => (
+                    <ListItem key={idx}>
+                      <ListItemText primary={err} />
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
+            )}
+          </Alert>
+        )}
+
         <Paper sx={{ p: 3 }}>
-          <form onSubmit={handleSubmit}>
+          <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 3 }}>
+            <Tab label="手動入力" />
+            <Tab label="CSVインポート" />
+          </Tabs>
+
+          {tabValue === 0 && (
+            <form onSubmit={handleSubmit}>
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <TextField
@@ -180,6 +267,65 @@ function CandidateCreate() {
               </Grid>
             </Grid>
           </form>
+          )}
+
+          {tabValue === 1 && (
+            <Box>
+              <Alert severity="info" sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  CSVフォーマット
+                </Typography>
+                <Typography variant="caption">
+                  ヘッダー行: 名前, メールアドレス, 電話番号, 応募職種ID, 備考
+                </Typography>
+                <br />
+                <Typography variant="caption">
+                  例: 山田太郎, yamada@example.com, 090-1234-5678, 1, 備考内容
+                </Typography>
+              </Alert>
+
+              <Box sx={{ mb: 3 }}>
+                <input
+                  accept=".csv"
+                  style={{ display: 'none' }}
+                  id="csv-file-input"
+                  type="file"
+                  onChange={handleFileChange}
+                />
+                <label htmlFor="csv-file-input">
+                  <Button
+                    variant="outlined"
+                    component="span"
+                    startIcon={<UploadFileIcon />}
+                    fullWidth
+                  >
+                    CSVファイルを選択
+                  </Button>
+                </label>
+                {selectedFile && (
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    選択されたファイル: {selectedFile.name}
+                  </Typography>
+                )}
+              </Box>
+
+              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => navigate('/candidates')}
+                >
+                  キャンセル
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleFileImport}
+                  disabled={loading || !selectedFile}
+                >
+                  {loading ? <CircularProgress size={24} /> : 'インポート'}
+                </Button>
+              </Box>
+            </Box>
+          )}
         </Paper>
       </Box>
     </Container>

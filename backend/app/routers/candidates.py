@@ -4,7 +4,7 @@ Candidates Router
 """
 
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -647,3 +647,124 @@ def export_candidate_evaluations_csv(
             "Content-Disposition": f"attachment; filename={filename}"
         }
     )
+
+
+@router.post("/import")
+async def import_candidates_csv(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """
+    CSVファイルから候補者を一括インポート
+
+    CSVフォーマット:
+    - ヘッダー行必須
+    - 列: 名前, メールアドレス, 電話番号, 応募職種ID, 備考
+
+    Args:
+        file: アップロードされたCSVファイル
+        db: データベースセッション
+
+    Returns:
+        インポート結果（成功数、失敗数、エラー詳細）
+    """
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="CSVファイルのみ対応しています"
+        )
+
+    try:
+        # ファイル内容を読み込む
+        contents = await file.read()
+        decoded = contents.decode('utf-8-sig')  # BOM付きUTF-8対応
+        csv_reader = csv.DictReader(io.StringIO(decoded))
+
+        success_count = 0
+        error_count = 0
+        errors = []
+        created_candidates = []
+
+        for row_num, row in enumerate(csv_reader, start=2):  # ヘッダー行を1として、データは2行目から
+            try:
+                # 必須フィールドのチェック
+                name = row.get('名前', '').strip()
+                job_posting_id_str = row.get('応募職種ID', '').strip()
+
+                if not name:
+                    errors.append(f"行{row_num}: 名前が空です")
+                    error_count += 1
+                    continue
+
+                if not job_posting_id_str:
+                    errors.append(f"行{row_num}: 応募職種IDが空です")
+                    error_count += 1
+                    continue
+
+                # 応募職種IDを整数に変換
+                try:
+                    job_posting_id = int(job_posting_id_str)
+                except ValueError:
+                    errors.append(f"行{row_num}: 応募職種IDが無効です（{job_posting_id_str}）")
+                    error_count += 1
+                    continue
+
+                # 募集要項の存在確認
+                job_posting = db.query(JobPosting).filter(JobPosting.id == job_posting_id).first()
+                if not job_posting:
+                    errors.append(f"行{row_num}: 応募職種ID {job_posting_id} が見つかりません")
+                    error_count += 1
+                    continue
+
+                # 候補者番号の自動生成
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                import random
+                random_suffix = random.randint(1000, 9999)
+                candidate_number = f"CAND-{timestamp}-{random_suffix}"
+
+                # 候補者データを作成
+                candidate = Candidate(
+                    job_posting_id=job_posting_id,
+                    name=name,
+                    email=row.get('メールアドレス', '').strip() or None,
+                    phone=row.get('電話番号', '').strip() or None,
+                    candidate_number=candidate_number,
+                    notes=row.get('備考', '').strip() or None,
+                    overall_status=CandidateStatus.SCREENING
+                )
+
+                db.add(candidate)
+                db.flush()  # IDを取得するため
+
+                created_candidates.append({
+                    'id': candidate.id,
+                    'name': candidate.name,
+                    'candidate_number': candidate.candidate_number
+                })
+
+                success_count += 1
+
+            except Exception as e:
+                errors.append(f"行{row_num}: {str(e)}")
+                error_count += 1
+                continue
+
+        # 全てコミット
+        if success_count > 0:
+            db.commit()
+
+        return {
+            "success": True,
+            "total_rows": success_count + error_count,
+            "success_count": success_count,
+            "error_count": error_count,
+            "errors": errors[:10],  # 最初の10件のエラーのみ返す
+            "created_candidates": created_candidates[:5]  # 最初の5件のみ返す
+        }
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"CSVファイルの処理中にエラーが発生しました: {str(e)}"
+        )
