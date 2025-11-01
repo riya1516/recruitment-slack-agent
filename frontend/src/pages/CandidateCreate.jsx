@@ -45,13 +45,15 @@ function CandidateCreate() {
   const fetchJobPostings = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/job-postings/`);
-      setJobPostings(response.data);
-      if (response.data.length > 0) {
-        setFormData(prev => ({ ...prev, job_posting_id: response.data[0].id }));
+      const data = Array.isArray(response.data) ? response.data : [];
+      setJobPostings(data);
+      if (data.length > 0) {
+        setFormData(prev => ({ ...prev, job_posting_id: data[0].id }));
       }
     } catch (error) {
       console.error('Failed to fetch job postings:', error);
       setError('募集要項の取得に失敗しました');
+      setJobPostings([]);
     }
   };
 
