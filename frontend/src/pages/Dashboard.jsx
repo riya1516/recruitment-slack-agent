@@ -58,7 +58,7 @@ function Dashboard() {
                   <Typography color="text.secondary" gutterBottom>
                     総候補者数
                   </Typography>
-                  <Typography variant="h4">{stats.total_candidates}</Typography>
+                  <Typography variant="h4">{stats.total_candidates || 0}</Typography>
                 </CardContent>
               </Card>
             </Grid>
@@ -68,9 +68,9 @@ function Dashboard() {
                   <Typography color="text.secondary" gutterBottom>
                     募集要項
                   </Typography>
-                  <Typography variant="h4">{stats.active_job_postings}</Typography>
+                  <Typography variant="h4">{stats.active_job_postings || 0}</Typography>
                   <Typography variant="caption" color="text.secondary">
-                    （有効: {stats.active_job_postings} / 全{stats.total_job_postings}）
+                    （有効: {stats.active_job_postings || 0} / 全{stats.total_job_postings || 0}）
                   </Typography>
                 </CardContent>
               </Card>
@@ -81,7 +81,7 @@ function Dashboard() {
                   <Typography color="text.secondary" gutterBottom>
                     選考中
                   </Typography>
-                  <Typography variant="h4" color="primary">{stats.status_breakdown['選考中']}</Typography>
+                  <Typography variant="h4" color="primary">{stats.status_breakdown?.['選考中'] || 0}</Typography>
                 </CardContent>
               </Card>
             </Grid>
@@ -91,7 +91,7 @@ function Dashboard() {
                   <Typography color="text.secondary" gutterBottom>
                     合格
                   </Typography>
-                  <Typography variant="h4" color="success.main">{stats.status_breakdown['合格']}</Typography>
+                  <Typography variant="h4" color="success.main">{stats.status_breakdown?.['合格'] || 0}</Typography>
                 </CardContent>
               </Card>
             </Grid>
@@ -99,7 +99,7 @@ function Dashboard() {
         )}
 
         {/* 最近の候補者 */}
-        {stats && stats.recent_candidates.length > 0 && (
+        {stats && stats.recent_candidates && stats.recent_candidates.length > 0 && (
           <Paper sx={{ p: 3, mb: 4 }}>
             <Typography variant="h6" gutterBottom>
               最近の候補者
