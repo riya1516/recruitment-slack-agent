@@ -110,14 +110,21 @@ function CandidateDetail() {
   return (
     <Container maxWidth="lg">
       <Box sx={{ my: 4 }}>
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate('/candidates')}
-          sx={{ mb: 2 }}
-        >
-          一覧に戻る
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate('/candidates')}
+          >
+            一覧に戻る
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => navigate(`/candidates/${id}/edit`)}
+          >
+            編集
+          </Button>
+        </Box>
 
         {/* 基本情報 */}
         <Paper sx={{ p: 3, mb: 3 }}>

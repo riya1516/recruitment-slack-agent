@@ -100,13 +100,22 @@ function CandidatesList() {
           <Typography variant="h4" component="h1">
             選考者一覧
           </Typography>
-          <Button
-            variant="outlined"
-            startIcon={<DownloadIcon />}
-            onClick={handleExportCSV}
-          >
-            CSVエクスポート
-          </Button>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="contained"
+              component={RouterLink}
+              to="/candidates/new"
+            >
+              新規作成
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<DownloadIcon />}
+              onClick={handleExportCSV}
+            >
+              CSVエクスポート
+            </Button>
+          </Box>
         </Box>
 
         <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>

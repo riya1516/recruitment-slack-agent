@@ -8,6 +8,8 @@ import JobPostingsList from './pages/JobPostingsList';
 import JobPostingCreate from './pages/JobPostingCreate';
 import CandidatesList from './pages/CandidatesList';
 import CandidateDetail from './pages/CandidateDetail';
+import CandidateCreate from './pages/CandidateCreate';
+import CandidateEdit from './pages/CandidateEdit';
 import Dashboard from './pages/Dashboard';
 
 const theme = createTheme({
@@ -34,7 +36,9 @@ function App() {
               <Route path="/job-postings" element={<JobPostingsList />} />
               <Route path="/job-postings/new" element={<JobPostingCreate />} />
               <Route path="/candidates" element={<CandidatesList />} />
+              <Route path="/candidates/new" element={<CandidateCreate />} />
               <Route path="/candidates/:id" element={<CandidateDetail />} />
+              <Route path="/candidates/:id/edit" element={<CandidateEdit />} />
             </Routes>
           </Box>
         </Box>
