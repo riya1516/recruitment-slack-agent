@@ -9,14 +9,24 @@ import {
   Grid,
   Snackbar,
   Alert,
+  Tabs,
+  Tab,
+  List,
+  ListItem,
+  ListItemText,
+  CircularProgress,
 } from '@mui/material';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+import { API_BASE_URL } from '../config';
 
 function JobPostingCreate() {
   const navigate = useNavigate();
+  const [tabValue, setTabValue] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [importResult, setImportResult] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     department: '',
@@ -47,6 +57,7 @@ function JobPostingCreate() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
     try {
       await axios.post(`${API_BASE_URL}/job-postings/`, formData);
@@ -65,7 +76,70 @@ function JobPostingCreate() {
         message: '募集要項の作成に失敗しました',
         severity: 'error'
       });
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setImportResult(null);
+    }
+  };
+
+  const handleFileImport = async () => {
+    if (!selectedFile) {
+      setSnackbar({
+        open: true,
+        message: 'CSVファイルを選択してください',
+        severity: 'error'
+      });
+      return;
+    }
+
+    setLoading(true);
+    setImportResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      const response = await axios.post(`${API_BASE_URL}/job-postings/import`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setImportResult(response.data);
+      setSelectedFile(null);
+
+      if (response.data.success && response.data.success_count > 0) {
+        setSnackbar({
+          open: true,
+          message: `${response.data.success_count}件の募集要項をインポートしました`,
+          severity: 'success'
+        });
+        setTimeout(() => {
+          navigate('/job-postings');
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Failed to import job postings:', error);
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.detail || 'CSVのインポートに失敗しました',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+    setImportResult(null);
   };
 
   const handleCloseSnackbar = () => {
@@ -79,8 +153,34 @@ function JobPostingCreate() {
           募集要項の新規作成
         </Typography>
 
+        {importResult && (
+          <Alert severity={importResult.error_count > 0 ? 'warning' : 'success'} sx={{ mt: 2 }}>
+            <Typography variant="subtitle2">
+              インポート完了: {importResult.success_count}件成功, {importResult.error_count}件失敗
+            </Typography>
+            {importResult.errors && importResult.errors.length > 0 && (
+              <Box sx={{ mt: 1 }}>
+                <Typography variant="caption">エラー詳細:</Typography>
+                <List dense>
+                  {importResult.errors.map((err, idx) => (
+                    <ListItem key={idx}>
+                      <ListItemText primary={err} />
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
+            )}
+          </Alert>
+        )}
+
         <Paper sx={{ p: 3, mt: 3 }}>
-          <form onSubmit={handleSubmit}>
+          <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 3 }}>
+            <Tab label="手動入力" />
+            <Tab label="CSVインポート" />
+          </Tabs>
+
+          {tabValue === 0 && (
+            <form onSubmit={handleSubmit}>
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <TextField
@@ -179,13 +279,77 @@ function JobPostingCreate() {
                   <Button
                     type="submit"
                     variant="contained"
+                    disabled={loading}
                   >
-                    作成
+                    {loading ? <CircularProgress size={24} /> : '作成'}
                   </Button>
                 </Box>
               </Grid>
             </Grid>
           </form>
+          )}
+
+          {tabValue === 1 && (
+            <Box>
+              <Alert severity="info" sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  CSVフォーマット
+                </Typography>
+                <Typography variant="caption">
+                  ヘッダー行: 職種名, 部署, 雇用形態, 職務内容, 必須要件, 優遇要件
+                </Typography>
+                <br />
+                <Typography variant="caption">
+                  ※必須要件と優遇要件は「|」で区切ってください
+                </Typography>
+                <br />
+                <Typography variant="caption">
+                  例: ソフトウェアエンジニア, エンジニアリング部, 正社員, Webアプリ開発, Python経験|AWS経験, 機械学習知識|Docker経験
+                </Typography>
+              </Alert>
+
+              <Box sx={{ mb: 3 }}>
+                <input
+                  accept=".csv"
+                  style={{ display: 'none' }}
+                  id="csv-file-input"
+                  type="file"
+                  onChange={handleFileChange}
+                />
+                <label htmlFor="csv-file-input">
+                  <Button
+                    variant="outlined"
+                    component="span"
+                    startIcon={<UploadFileIcon />}
+                    fullWidth
+                  >
+                    CSVファイルを選択
+                  </Button>
+                </label>
+                {selectedFile && (
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    選択されたファイル: {selectedFile.name}
+                  </Typography>
+                )}
+              </Box>
+
+              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => navigate('/job-postings')}
+                >
+                  キャンセル
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleFileImport}
+                  disabled={loading || !selectedFile}
+                >
+                  {loading ? <CircularProgress size={24} /> : 'インポート'}
+                </Button>
+              </Box>
+            </Box>
+          )}
         </Paper>
       </Box>
 

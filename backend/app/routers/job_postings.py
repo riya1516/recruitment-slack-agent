@@ -4,9 +4,11 @@ Job Postings Router
 """
 
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+import csv
+import io
 
 from database import get_db
 from models.database import JobPosting, EvaluationCriteria, SelectionStage, SelectionStageType
@@ -240,3 +242,134 @@ def delete_job_posting(
     db.commit()
 
     return None
+
+
+@router.post("/import")
+async def import_job_postings_csv(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """
+    CSVファイルから募集要項を一括インポート
+
+    CSVフォーマット:
+    - ヘッダー行必須
+    - 列: 職種名, 部署, 雇用形態, 職務内容, 必須要件(カンマ区切り), 優遇要件(カンマ区切り)
+
+    Args:
+        file: アップロードされたCSVファイル
+        db: データベースセッション
+
+    Returns:
+        インポート結果（成功数、失敗数、エラー詳細）
+    """
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="CSVファイルのみ対応しています"
+        )
+
+    try:
+        # ファイル内容を読み込む
+        contents = await file.read()
+        decoded = contents.decode('utf-8-sig')  # BOM付きUTF-8対応
+        csv_reader = csv.DictReader(io.StringIO(decoded))
+
+        success_count = 0
+        error_count = 0
+        errors = []
+        created_job_postings = []
+
+        for row_num, row in enumerate(csv_reader, start=2):  # ヘッダー行を1として、データは2行目から
+            try:
+                # 必須フィールドのチェック
+                title = row.get('職種名', '').strip()
+
+                if not title:
+                    errors.append(f"行{row_num}: 職種名が空です")
+                    error_count += 1
+                    continue
+
+                # 必須要件と優遇要件をリストに変換
+                requirements_str = row.get('必須要件', '').strip()
+                preferred_skills_str = row.get('優遇要件', '').strip()
+
+                requirements = [r.strip() for r in requirements_str.split('|') if r.strip()] if requirements_str else []
+                preferred_skills = [p.strip() for p in preferred_skills_str.split('|') if p.strip()] if preferred_skills_str else []
+
+                # 募集要項データを作成
+                job_posting = JobPosting(
+                    title=title,
+                    department=row.get('部署', '').strip() or None,
+                    employment_type=row.get('雇用形態', '').strip() or None,
+                    description=row.get('職務内容', '').strip() or None,
+                    requirements=requirements,
+                    preferred_skills=preferred_skills,
+                    is_active=True
+                )
+
+                db.add(job_posting)
+                db.flush()  # IDを取得するため
+
+                # デフォルトの評価基準を作成
+                default_criteria = [
+                    {"category": "技術スキル", "weight": 1.0, "description": "必須スキル・優遇スキルとの合致度"},
+                    {"category": "経験の質", "weight": 1.0, "description": "プロジェクト経験の深さ、成果、責任範囲"},
+                    {"category": "文化適合性", "weight": 1.0, "description": "企業価値観との一致度、コミュニケーションスタイル"},
+                    {"category": "コミュニケーション能力", "weight": 1.0, "description": "説明力、傾聴力、協調性"},
+                    {"category": "成長可能性", "weight": 1.0, "description": "学習意欲、スキルの発展軌跡、適応力"},
+                ]
+
+                for criteria_data in default_criteria:
+                    criteria = EvaluationCriteria(
+                        job_posting_id=job_posting.id,
+                        **criteria_data
+                    )
+                    db.add(criteria)
+
+                # デフォルトの選考段階を作成
+                default_stages = [
+                    {"stage_order": 1, "stage_name": "書類選考", "stage_type": "DOCUMENT_SCREENING"},
+                    {"stage_order": 2, "stage_name": "一次面接", "stage_type": "FIRST_INTERVIEW"},
+                    {"stage_order": 3, "stage_name": "二次面接", "stage_type": "SECOND_INTERVIEW"},
+                    {"stage_order": 4, "stage_name": "最終面接", "stage_type": "FINAL_INTERVIEW"},
+                ]
+
+                for stage_data in default_stages:
+                    stage = SelectionStage(
+                        job_posting_id=job_posting.id,
+                        **stage_data
+                    )
+                    db.add(stage)
+
+                created_job_postings.append({
+                    'id': job_posting.id,
+                    'title': job_posting.title
+                })
+
+                success_count += 1
+
+            except Exception as e:
+                errors.append(f"行{row_num}: {str(e)}")
+                error_count += 1
+                continue
+
+        # 全てコミット
+        if success_count > 0:
+            db.commit()
+
+        return {
+            "success": True,
+            "total_rows": success_count + error_count,
+            "success_count": success_count,
+            "error_count": error_count,
+            "errors": errors[:10],  # 最初の10件のエラーのみ返す
+            "created_job_postings": created_job_postings[:5]  # 最初の5件のみ返す
+        }
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"CSVファイルの処理中にエラーが発生しました: {str(e)}"
+        )
