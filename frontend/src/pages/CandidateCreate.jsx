@@ -290,11 +290,11 @@ function CandidateCreate() {
                 <input
                   accept=".csv"
                   style={{ display: 'none' }}
-                  id="csv-file-input"
+                  id="candidate-csv-file-input"
                   type="file"
                   onChange={handleFileChange}
                 />
-                <label htmlFor="csv-file-input">
+                <label htmlFor="candidate-csv-file-input">
                   <Button
                     variant="outlined"
                     component="span"

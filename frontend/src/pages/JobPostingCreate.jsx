@@ -312,11 +312,11 @@ function JobPostingCreate() {
                 <input
                   accept=".csv"
                   style={{ display: 'none' }}
-                  id="csv-file-input"
+                  id="job-posting-csv-file-input"
                   type="file"
                   onChange={handleFileChange}
                 />
-                <label htmlFor="csv-file-input">
+                <label htmlFor="job-posting-csv-file-input">
                   <Button
                     variant="outlined"
                     component="span"
