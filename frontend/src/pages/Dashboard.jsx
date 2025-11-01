@@ -1,5 +1,6 @@
-import { Container, Typography, Grid, Card, CardContent, CardActions, Button, Box, Paper, List, ListItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Container, Typography, Grid, Card, CardContent, CardActions, Button, Box, Paper, List, ListItem, ListItemIcon, ListItemText, Divider, CircularProgress } from '@mui/material';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import PersonIcon from '@mui/icons-material/Person';
 import WorkIcon from '@mui/icons-material/Work';
 import AssessmentIcon from '@mui/icons-material/Assessment';
@@ -7,8 +8,37 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import DownloadIcon from '@mui/icons-material/Download';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
 function Dashboard() {
+  const navigate = useNavigate();
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL.replace('/api/v1', '')}/api/v1/stats`);
+      setStats(response.data);
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Container sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <CircularProgress />
+      </Container>
+    );
+  }
+
   return (
     <Container maxWidth="lg">
       <Box sx={{ my: 4 }}>
@@ -18,6 +48,82 @@ function Dashboard() {
         <Typography variant="body1" color="text.secondary" paragraph>
           採用選考支援システムへようこそ
         </Typography>
+
+        {/* 統計情報カード */}
+        {stats && (
+          <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Typography color="text.secondary" gutterBottom>
+                    総候補者数
+                  </Typography>
+                  <Typography variant="h4">{stats.total_candidates}</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Typography color="text.secondary" gutterBottom>
+                    募集要項
+                  </Typography>
+                  <Typography variant="h4">{stats.active_job_postings}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    （有効: {stats.active_job_postings} / 全{stats.total_job_postings}）
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Typography color="text.secondary" gutterBottom>
+                    選考中
+                  </Typography>
+                  <Typography variant="h4" color="primary">{stats.status_breakdown['選考中']}</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Typography color="text.secondary" gutterBottom>
+                    合格
+                  </Typography>
+                  <Typography variant="h4" color="success.main">{stats.status_breakdown['合格']}</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        )}
+
+        {/* 最近の候補者 */}
+        {stats && stats.recent_candidates.length > 0 && (
+          <Paper sx={{ p: 3, mb: 4 }}>
+            <Typography variant="h6" gutterBottom>
+              最近の候補者
+            </Typography>
+            <Divider sx={{ mb: 2 }} />
+            <List>
+              {stats.recent_candidates.map((candidate) => (
+                <ListItem
+                  key={candidate.id}
+                  button
+                  onClick={() => navigate(`/candidates/${candidate.id}`)}
+                >
+                  <ListItemIcon>
+                    <PersonIcon />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={`${candidate.name} (${candidate.candidate_number})`}
+                    secondary={`${candidate.overall_status || '未設定'} - ${new Date(candidate.created_at).toLocaleString('ja-JP')}`}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          </Paper>
+        )}
 
         <Grid container spacing={3} sx={{ mt: 2 }}>
           <Grid item xs={12} md={4}>
