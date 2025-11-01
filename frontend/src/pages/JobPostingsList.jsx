@@ -17,8 +17,7 @@ import {
 import { Link as RouterLink } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
 import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+import { API_BASE_URL } from '../config';
 
 function JobPostingsList() {
   const [jobPostings, setJobPostings] = useState([]);
@@ -31,9 +30,10 @@ function JobPostingsList() {
   const fetchJobPostings = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/job-postings/`);
-      setJobPostings(response.data);
+      setJobPostings(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Failed to fetch job postings:', error);
+      setJobPostings([]);
     } finally {
       setLoading(false);
     }

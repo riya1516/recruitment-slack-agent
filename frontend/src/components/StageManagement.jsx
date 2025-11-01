@@ -17,8 +17,7 @@ import {
 } from '@mui/material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+import { API_BASE_URL } from '../config';
 
 function StageManagement({ candidateId, currentStatus, currentStage, onStatusUpdate }) {
   const [newStatus, setNewStatus] = useState(currentStatus);

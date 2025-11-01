@@ -19,8 +19,7 @@ import {
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+import { API_BASE_URL } from '../config';
 
 function CandidatesList() {
   const navigate = useNavigate();
@@ -40,9 +39,10 @@ function CandidatesList() {
       if (statusFilter) params.status = statusFilter;
 
       const response = await axios.get(`${API_BASE_URL}/candidates/`, { params });
-      setCandidates(response.data);
+      setCandidates(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Failed to fetch candidates:', error);
+      setCandidates([]);
     } finally {
       setLoading(false);
     }

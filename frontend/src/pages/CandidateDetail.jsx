@@ -25,8 +25,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import axios from 'axios';
 import QuestionGenerator from '../components/QuestionGenerator';
 import StageManagement from '../components/StageManagement';
-
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+import { API_BASE_URL } from '../config';
 
 function CandidateDetail() {
   const { id } = useParams();
