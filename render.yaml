@@ -23,7 +23,7 @@ services:
       - key: GEMINI_API_KEY
         sync: false
       - key: PYTHON_VERSION
-        value: "3.11"
+        value: "3.11.0"
 
   # Slack Bot (Web Service with health check to prevent sleep)
   - type: web
@@ -46,7 +46,7 @@ services:
       - key: GEMINI_API_KEY
         sync: false
       - key: PYTHON_VERSION
-        value: "3.11"
+        value: "3.11.0"
 
   # React Frontend (Static Site)
   - type: web
