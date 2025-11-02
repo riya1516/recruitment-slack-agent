@@ -155,9 +155,9 @@ class CandidateStage(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     candidate_id = Column(Integer, ForeignKey("candidates.id"))
-    selection_stage_id = Column(Integer, ForeignKey("selection_stages.id"))
+    stage_id = Column(Integer, ForeignKey("selection_stages.id"))
 
-    status = Column(SQLEnum(CandidateStatus), default=CandidateStatus.IN_PROGRESS)
+    status = Column(String(50), default="進行中")
     interview_date = Column(DateTime, nullable=True)
     interview_notes = Column(Text)  # 面接メモ
 

@@ -730,7 +730,7 @@ async def import_candidates_csv(
                     phone=row.get('電話番号', '').strip() or None,
                     candidate_number=candidate_number,
                     notes=row.get('備考', '').strip() or None,
-                    overall_status=CandidateStatus.SCREENING
+                    overall_status=CandidateStatus.IN_PROGRESS
                 )
 
                 db.add(candidate)
